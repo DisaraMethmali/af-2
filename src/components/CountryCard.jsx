@@ -94,14 +94,14 @@ const CountryCard = ({ country }) => {
 
         <Divider sx={{ mb: 1.5 }} />
 
-        <Typography variant="body2" sx={{ mb: 0.5 }}>
-          <strong>Population:</strong>{" "}
+        <Typography variant="body2" sx={{ mb: 0.5, fontFamily: "Poppins, sans-serif",}}>
+          <strong >Population:</strong>{" "}
           {new Intl.NumberFormat().format(population)}
         </Typography>
-        <Typography variant="body2" sx={{ mb: 0.5 }}>
+        <Typography variant="body2" sx={{ mb: 0.5,fontFamily: "Poppins, sans-serif", }}>
           <strong>Region:</strong> {region || "N/A"}
         </Typography>
-        <Typography variant="body2">
+        <Typography variant="body2" sx={{ mb: 0.5,fontFamily: "Poppins, sans-serif", }}>
           <strong>Capital:</strong> {capital?.[0] || "N/A"}
         </Typography>
       </CardContent>

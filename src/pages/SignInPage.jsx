@@ -1,144 +1,227 @@
-import { useState } from "react"
-import { useNavigate, useLocation } from "react-router-dom"
-import { FaGithub, FaGoogle } from "react-icons/fa"
-import { useAuth } from "../contexts/AuthContext"
-import { useToast } from "../contexts/ToastContext"
+import { createTheme, ThemeProvider } from '@mui/material/styles';
+import { CssBaseline, Button, TextField, Typography, Box, Grid } from '@mui/material';
+import { FaGithub, FaGoogle } from 'react-icons/fa';
+import { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
+
+const theme = createTheme({
+  palette: {
+    primary: {
+      main: '#1976d2', // Blue theme
+    },
+    background: {
+      default: '#f4f6f8', // Light background
+    },
+  },
+  typography: {
+    fontFamily: '"Poppins", sans-serif',
+  },
+  components: {
+    MuiOutlinedInput: {
+      styleOverrides: {
+        root: {
+          borderRadius: 20, // Rounded corners for all text fields
+        },
+      },
+    },
+  },
+});
 
 const SignInPage = () => {
-  const navigate = useNavigate()
-  const location = useLocation()
-  const { login } = useAuth()
-  const { showToast } = useToast()
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { login } = useAuth();
+  const { showToast } = useToast();
 
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState("")
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  // Get the redirect path from location state or default to home
-  const from = location.state?.from?.pathname || "/"
+  const from = location.state?.from?.pathname || '/';
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setError("")
+    e.preventDefault();
+    setIsLoading(true);
+    setError('');
 
     try {
-      await login({ email, password })
+      await login({ email, password });
       showToast({
-        title: "Welcome back!",
-        message: "You have successfully signed in.",
-      })
-      navigate(from, { replace: true })
+        title: 'Welcome back!',
+        message: 'You have successfully signed in.',
+      });
+      navigate(from, { replace: true });
     } catch (error) {
-      console.error("Login error:", error)
-      setError("Invalid email or password")
+      console.error('Login error:', error);
+      setError('Invalid email or password');
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleOAuthSignIn = (provider) => {
-    // In a real app, this would redirect to the OAuth provider
-    // For demo purposes, we'll simulate a successful login
-    setIsLoading(true)
+    setIsLoading(true);
     setTimeout(() => {
       login({
         email: `demo@${provider}.com`,
         name: `${provider.charAt(0).toUpperCase() + provider.slice(1)} User`,
-      })
+      });
       showToast({
-        title: "Welcome!",
+        title: 'Welcome!',
         message: `You have successfully signed in with ${provider}.`,
-      })
-      navigate(from, { replace: true })
-      setIsLoading(false)
-    }, 1000)
-  }
+      });
+      navigate(from, { replace: true });
+      setIsLoading(false);
+    }, 1000);
+  };
 
   return (
-    <div className="container flex items-center justify-center min-h-[80vh] py-8">
-      <div className="card w-full max-w-md p-6">
-        <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold">Sign in</h1>
-          <p className="text-muted">Sign in to your account to save your favorite countries</p>
-        </div>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <Box className="container" sx={{ display: 'flex', justifyContent: 'center', minHeight: '80vh', py: 8 }}>
+        <Box className="card" sx={{ width: '40%', maxWidth: 'md', p: 6, borderRadius: 3, boxShadow: 2 }}>
+          <Box sx={{ textAlign: 'center', mb: 5 }}>
+            <Typography variant="h4" sx={{ fontWeight: 600 }}>
+              Sign in
+            </Typography>
+            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+              Sign in to your account to save your favorite countries
+            </Typography>
+          </Box>
 
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <button
-              onClick={() => handleOAuthSignIn("github")}
-              disabled={isLoading}
-              className="btn btn-outline flex items-center justify-center gap-2"
-            >
-              <FaGithub />
-              GitHub
-            </button>
-            <button
-              onClick={() => handleOAuthSignIn("google")}
-              disabled={isLoading}
-              className="btn btn-outline flex items-center justify-center gap-2"
-            >
-              <FaGoogle />
-              Google
-            </button>
-          </div>
+          <Box sx={{ mb: 3, justifyContent: "center", alignItems: 'center' }}>
+            <Grid container spacing={2}>
+              <Grid item xs={6}>
+                <Button
+                  fullWidth
+                  variant="outlined"
+                  onClick={() => handleOAuthSignIn('github')}
+                  disabled={isLoading}
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    gap: 1,
+                    alignItems: 'center',
+                    fontWeight: 500,
+                    borderColor: 'grey.400',
+                    borderRadius: '15px',
+                    backgroundImage: 'linear-gradient(45deg, #333, #555)',
+                    color: 'white',
+                    textTransform: 'capitalize',
+                    padding: '8px 0', // Reduced height
+                    '&:hover': {
+                      backgroundImage: 'linear-gradient(45deg, #555, #333)',
+                    },
+                  }}
+                >
+                  <FaGithub />
+                  GitHub
+                </Button>
+              </Grid>
+              <Grid item xs={6}>
+                <Button
+                  fullWidth
+                  variant="outlined"
+                  onClick={() => handleOAuthSignIn('google')}
+                  disabled={isLoading}
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    gap: 1,
+                    alignItems: 'center',
+                    fontWeight: 500,
+                    borderColor: 'grey.400',
+                    borderRadius: '15px',
+                    backgroundImage: 'linear-gradient(45deg, #4285F4, #34A853, #FBBC05, #EA4335)',
+                    color: 'white',
+                    textTransform: 'capitalize',
+                    padding: '8px 0', // Reduced height
+                    '&:hover': {
+                      backgroundImage: 'linear-gradient(45deg, #EA4335, #FBBC05, #34A853, #4285F4)',
+                    },
+                  }}
+                >
+                  <FaGoogle />
+                  Google
+                </Button>
+              </Grid>
+            </Grid>
+          </Box>
 
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-border" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted">Or continue with</span>
-            </div>
-          </div>
+          <Box sx={{ position: 'relative', mb: 3 }}>
+            <Box sx={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center' }}>
+              <Box sx={{ flexGrow: 1, height: 1, borderTop: 1, borderColor: 'divider' }} />
+            </Box>
+            <Box sx={{ position: 'relative', display: 'flex', justifyContent: 'center', color: 'text.secondary' }}>
+              <Typography variant="body2" sx={{ backgroundColor: 'background.paper', px: 2 }}>
+                Or continue with
+              </Typography>
+            </Box>
+          </Box>
 
           <form onSubmit={handleSubmit}>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label htmlFor="email" className="block text-sm font-medium">
-                  Email
-                </label>
-                <input
-                  id="email"
-                  type="email"
-                  placeholder="m@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="input"
-                />
-              </div>
+            <Box sx={{ mb: 2 }}>
+              <TextField
+                label="Email"
+                type="email"
+                placeholder="m@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                fullWidth
+                variant="outlined"
+                size="small" // Reduced size
+                disabled={isLoading}
+                InputProps={{
+                  sx: {
+                    borderRadius: '20px',
+                  }
+                }}
+              />
+            </Box>
 
-              <div className="space-y-2">
-                <label htmlFor="password" className="block text-sm font-medium">
-                  Password
-                </label>
-                <input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="input"
-                />
-              </div>
+            <Box sx={{ mb: 3 }}>
+              <TextField
+                label="Password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                fullWidth
+                variant="outlined"
+                size="small" // Reduced size
+                disabled={isLoading}
+                InputProps={{
+                  sx: {
+                    borderRadius: '20px',
+                  }
+                }}
+              />
+            </Box>
 
-              {error && <div className="text-sm text-destructive text-center">{error}</div>}
+            {error && <Typography sx={{ color: 'error.main', textAlign: 'center', mb: 2 }}>{error}</Typography>}
 
-              <button type="submit" className="btn btn-primary w-full" disabled={isLoading}>
-                {isLoading ? "Signing in..." : "Sign in"}
-              </button>
-            </div>
+            <Button
+              fullWidth
+              variant="contained"
+              color="primary"
+              type="submit"
+              sx={{
+                padding: '8px 0', // Reduced height
+                borderRadius: '20px',
+              }}
+              disabled={isLoading}
+            >
+              {isLoading ? 'Signing in...' : 'Sign in'}
+            </Button>
           </form>
-        </div>
+        </Box>
+      </Box>
+    </ThemeProvider>
+  );
+};
 
-        <div className="text-center text-sm text-muted mt-6">
-          <p>For demo purposes, any email with a password of 6+ characters will work</p>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-export default SignInPage
+export default SignInPage;

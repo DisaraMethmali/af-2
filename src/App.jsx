@@ -19,10 +19,7 @@ function App() {
         <AuthProvider>
           <ToastProvider>
             <div className="app">
-            <link
-  href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap"
-  rel="stylesheet"
-/>
+
               <Header />
               <Routes>
                 <Route path="/" element={<HomePage />} />

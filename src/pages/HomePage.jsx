@@ -20,36 +20,23 @@ import {
 } from "@mui/material";
 import {
   Public as GlobeIcon,
-  Search as SearchIcon,
   FilterList as FilterIcon,
   Close as CloseIcon,
 } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
 import CountryList from "../components/CountryList";
 import { getAllCountries, getCountriesByName, getCountriesByRegion } from "../services/api";
-
-const regions = ["Africa", "Americas", "Asia", "Europe", "Oceania"];
-const languages = ["English", "Spanish", "French", "Arabic", "Chinese", "Russian", "Portuguese", "German"];
-
+import SearchIcon from "@mui/icons-material/Search";
+import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 const HeroSection = styled(Box)(({ theme }) => ({
-  background: `linear-gradient(120deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-  padding: theme.spacing(10, 2),
+  background: "#fff", // white background
+  padding: theme.spacing(6, 2),
   textAlign: "center",
-  color: "#fff",
+  color: "#001f3f", // deep blue text
 }));
 
-const SearchPaper = styled(Paper)(({ theme }) => ({
-  display: "flex",
-  alignItems: "center",
-  borderRadius: theme.shape.borderRadius,
-  boxShadow: theme.shadows[2],
-}));
 
-const FilterPaper = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(3),
-  borderRadius: theme.shape.borderRadius,
-  boxShadow: theme.shadows[1],
-}));
+
 
 const StatsCard = styled(Card)(({ theme }) => ({
   marginBottom: theme.spacing(4),
@@ -62,12 +49,13 @@ const HomePage = () => {
   const searchQuery = searchParams.get("search") || "";
   const regionFilter = searchParams.get("region") || "";
   const languageFilter = searchParams.get("language") || "";
-
+  const [filterType, setFilterType] = useState("name");
   const [countries, setCountries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
-
+  const [filtered, setFiltered] = useState([]);
+  const [query, setQuery] = useState("");
   useEffect(() => {
     const fetchCountries = async () => {
       setLoading(true);
@@ -103,45 +91,54 @@ const HomePage = () => {
     fetchCountries();
   }, [searchQuery, regionFilter, languageFilter]);
 
-  const handleSearch = (e) => {
-    const value = e.target.value;
-    const params = new URLSearchParams(searchParams);
+  const handleSearch = async () => {
+    if (!query) return setFiltered(countries);
 
-    if (value) {
-      params.set("search", value);
-    } else {
-      params.delete("search");
+    setIsLoading(true);
+    try {
+      let endpoint = "";
+
+      switch (filterType) {
+        case "name":
+        case "capital":
+        case "region":
+        case "subregion":
+        case "currency":
+        case "lang":
+        case "translation":
+          endpoint = `https://restcountries.com/v3.1/${filterType}/${query}`;
+          break;
+        case "code":
+          endpoint = `https://restcountries.com/v3.1/alpha/${query}`;
+          break;
+        case "codes":
+          endpoint = `https://restcountries.com/v3.1/alpha?codes=${query}`;
+          break;
+        case "fullText":
+          endpoint = `https://restcountries.com/v3.1/name/${query}?fullText=true`;
+          break;
+        default:
+          endpoint = `https://restcountries.com/v3.1/name/${query}`;
+      }
+
+      const res = await fetch(endpoint);
+
+      if (!res.ok) {
+        console.warn("Invalid filter or query");
+        setFiltered([]);
+      } else {
+        const data = await res.json();
+        setFiltered(Array.isArray(data) ? data : [data]);
+      }
+
+      setPage(1);
+    } catch (err) {
+      console.error("Search error:", err);
+      setFiltered([]);
     }
-
-    setSearchParams(params);
+    setIsLoading(false);
   };
-
-  const handleRegionChange = (e) => {
-    const value = e.target.value;
-    const params = new URLSearchParams(searchParams);
-
-    if (value) {
-      params.set("region", value);
-    } else {
-      params.delete("region");
-    }
-
-    setSearchParams(params);
-  };
-
-  const handleLanguageChange = (e) => {
-    const value = e.target.value;
-    const params = new URLSearchParams(searchParams);
-
-    if (value) {
-      params.set("language", value);
-    } else {
-      params.delete("language");
-    }
-
-    setSearchParams(params);
-  };
-
+  
   const clearFilters = () => {
     setSearchParams({});
   };
@@ -153,168 +150,147 @@ const HomePage = () => {
       {/* Hero Section */}
       <HeroSection>
         <Container maxWidth="lg">
-          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", mb: 3 }}>
-            <GlobeIcon sx={{ fontSize: 48, mr: 1 }} />
-            <Typography variant="h3" fontWeight={700}>
-              REST Countries Explorer
+          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", mb: 0 }}>
+            {/* Title and Icon */}
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", mb: 0 }}>
+              <GlobeIcon sx={{ fontSize: 48, mr: 1 }} />
+              <Typography variant="h3" fontWeight={700} sx={{ color: "#001f3f",fontFamily: "Poppins, sans-serif" }}>
+  REST Countries Explorer
+</Typography>
+
+            </Box>
+            <Typography variant="subtitle1" sx={{ maxWidth: 600, mx: "auto", opacity: 0.8,fontFamily: "Poppins, sans-serif",mt: 0,  mb: 4,  }}>
+              Discover detailed information about countries across the globe
             </Typography>
-          </Box>
-          <Typography variant="subtitle1" sx={{ maxWidth: 600, mx: "auto", opacity: 0.8 }}>
-            Discover detailed information about countries across the globe
-          </Typography>
 
-          {/* Search */}
-          <Box sx={{ maxWidth: 800, mx: "auto", mt: 4 }}>
-            <SearchPaper>
-              <TextField
-                fullWidth
-                placeholder="Search by country name..."
-                value={searchQuery}
-                onChange={handleSearch}
-                variant="outlined"
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon />
-                    </InputAdornment>
-                  ),
-                  sx: { borderRadius: 2 },
-                }}
-                sx={{
-                  "& .MuiOutlinedInput-root": {
-                    "& fieldset": { border: "none" },
-                  },
-                }}
-              />
-              <Button
-                onClick={() => setShowFilters(!showFilters)}
-                variant="contained"
-                color="secondary"
-                sx={{ height: 56, borderTopLeftRadius: 0, borderBottomLeftRadius: 0 }}
-              >
-                <FilterIcon />
-              </Button>
-              {hasFilters && (
-                <Button
-                  onClick={clearFilters}
-                  color="error"
-                  variant="contained"
-                  sx={{ height: 56 }}
-                >
-                  <CloseIcon />
-                </Button>
-              )}
-            </SearchPaper>
-          </Box>
+            
+            <Box
+  sx={{
+    display: "flex",
+    flexDirection: { xs: "column", sm: "row" },
+    gap: 2,
+    mb: 4,
+    alignItems: "center",
+  }}
+>
+  {/* Filter Type Dropdown */}
+  <FormControl sx={{
+    minWidth: 160,
+    borderRadius: "30px", height:"40px",fontFamily: "Poppins",// fully rounded
+    "& .MuiOutlinedInput-root": {
+      borderRadius: "30px",
+    },
+  }}>
+    <InputLabel sx={{fontFamily: "Poppins, sans-serif",}}>Filter</InputLabel>
+    <Select
+      value={filterType}
+      onChange={(e) => setFilterType(e.target.value)}
+      label="Filter"
+      IconComponent={ArrowDropDownIcon}
+      sx={{fontFamily: "Poppins, sans-serif",height:"40px"}}
+    >
+      {[
+        "name",
+        "fullText",
+        "code",
+        "codes",
+        "capital",
+        "region",
+        "subregion",
+        "lang",
+        "currency",
+        "translation",
+      ].map((option) => (
+        <MenuItem key={option} value={option} sx={{fontFamily: "Poppins, sans-serif"}}>
+          {option.charAt(0).toUpperCase() + option.slice(1)}
+        </MenuItem>
+      ))}
+    </Select>
+  </FormControl>
 
-          {/* Filters */}
-          {showFilters && (
-            <FilterPaper sx={{ mt: 2 }}>
-              <Grid container spacing={2}>
-                <Grid item xs={12} md={6}>
-                  <FormControl fullWidth>
-                    <InputLabel>Region</InputLabel>
-                    <Select
-                      value={regionFilter}
-                      onChange={handleRegionChange}
-                      label="Region"
-                    >
-                      <MenuItem value="">All Regions</MenuItem>
-                      {regions.map((region) => (
-                        <MenuItem key={region} value={region}>
-                          {region}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <FormControl fullWidth>
-                    <InputLabel>Language</InputLabel>
-                    <Select
-                      value={languageFilter}
-                      onChange={handleLanguageChange}
-                      label="Language"
-                    >
-                      <MenuItem value="">All Languages</MenuItem>
-                      {languages.map((lang) => (
-                        <MenuItem key={lang} value={lang}>
-                          {lang}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-              </Grid>
-            </FilterPaper>
-          )}
+  {/* Search Input */}
+  <TextField
+    value={query}
+    onChange={(e) => setQuery(e.target.value)}
+    placeholder="Search..."
+    variant="outlined"
+    size="small"
+    sx={{
+      width: { xs: "100%", sm: "33%" },
+      borderRadius: "30px",
+      "& .MuiOutlinedInput-root": {
+        borderRadius: "30px",
+      },
+      "& input": {
+        fontFamily: "Poppins, sans-serif",
+      },
+    }}
+    InputProps={{
+      startAdornment: (
+        <SearchIcon sx={{ color: "gray", mr: 1 }} />
+      ),
+    }}
+  />
+
+  {/* Search Button */}
+  <Button
+    variant="contained"
+    color="primary"
+    onClick={handleSearch}
+    sx={{
+      height: "40px",
+      px: 3,
+      borderRadius: "30px",
+      textTransform: "none",
+      fontFamily: "Poppins, sans-serif",
+    }}
+  >
+    Search
+  </Button>
+
+  {/* Reset Button */}
+  <Button
+    variant="outlined"
+    color="inherit"
+    onClick={() => {
+      setQuery("");
+      setFilterType("name");
+      setFiltered(countries);
+      setPage(1);
+    }}
+    sx={{
+      height: "40px",
+      px: 3,
+      borderRadius: "30px",
+      textTransform: "none",
+      fontFamily: "Poppins, sans-serif",
+    }}
+  >
+    Reset
+  </Button>
+</Box>
+
+            
+          </Box>
         </Container>
       </HeroSection>
 
       {/* Content Section */}
-      <Container maxWidth="lg" sx={{ py: 6 }}>
-        {/* Stats */}
-        <StatsCard>
-          <CardContent>
-            <Grid container spacing={2} alignItems="center">
-              <Grid item xs={6} md="auto">
-                <Typography variant="caption" color="text.secondary">
-                  Total Countries
-                </Typography>
-                <Typography variant="h5" fontWeight="bold">
-                  {loading ? <CircularProgress size={24} /> : countries.length}
-                </Typography>
-              </Grid>
+      <Container maxWidth="lg" sx={{ mt:0 }}>
+       
 
-              {regionFilter && (
-                <Grid item xs={6} md="auto">
-                  <Typography variant="caption" color="text.secondary">
-                    Region
-                  </Typography>
-                  <Typography variant="h5" fontWeight="bold">
-                    {regionFilter}
-                  </Typography>
-                </Grid>
-              )}
-
-              {languageFilter && (
-                <Grid item xs={6} md="auto">
-                  <Typography variant="caption" color="text.secondary">
-                    Language
-                  </Typography>
-                  <Typography variant="h5" fontWeight="bold">
-                    {languageFilter}
-                  </Typography>
-                </Grid>
-              )}
-
-              {searchQuery && (
-                <Grid item xs={6} md="auto">
-                  <Typography variant="caption" color="text.secondary">
-                    Search
-                  </Typography>
-                  <Typography variant="h5" fontWeight="bold">
-                    "{searchQuery}"
-                  </Typography>
-                </Grid>
-              )}
-            </Grid>
-          </CardContent>
-        </StatsCard>
-
-       {/* Country List */}
-{error ? (
-  <Box textAlign="center" py={6}>
-    <Typography variant="h6" color="error">
-      {error}
-    </Typography>
-  </Box>
-) : (
-  <Container maxWidth="lg" sx={{ py: 6, px: '40px' }}>
-    <CountryList countries={countries} loading={loading} />
-  </Container>
-)}
-
+        {/* Country List */}
+        {error ? (
+          <Box textAlign="center" py={0} sx={{ mt:0 }}>
+            <Typography variant="h6" color="error" fontFamily="Poppins, sans-serif">
+              {error}
+            </Typography>
+          </Box>
+        ) : (
+          <Container maxWidth="lg" sx={{ py: 6, pr: "0px", pl: "40px" }}>
+            <CountryList countries={countries} loading={loading} />
+          </Container>
+        )}
       </Container>
     </Box>
   );

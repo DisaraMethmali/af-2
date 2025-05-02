@@ -1,38 +1,105 @@
-import { useEffect } from "react"
-import { FaCheckCircle, FaExclamationCircle, FaTimes } from "react-icons/fa"
+import { useEffect } from "react";
+import { Box, Typography, IconButton, Paper, ThemeProvider, createTheme } from "@mui/material";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import ErrorIcon from "@mui/icons-material/Error";
+import CloseIcon from "@mui/icons-material/Close";
+
+// Create theme with Poppins font
+const theme = createTheme({
+  typography: {
+    fontFamily: '"Poppins", sans-serif',
+    allVariants: {
+      fontFamily: '"Poppins", sans-serif',
+    }
+  },
+  components: {
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          backgroundColor: 'white'
+        }
+      }
+    }
+  }
+});
 
 const Toast = ({ toast, onClose }) => {
   useEffect(() => {
     const timer = setTimeout(() => {
-      onClose()
-    }, 5000)
-
-    return () => clearTimeout(timer)
-  }, [onClose])
-
+      onClose();
+    }, 5000);
+    
+    return () => clearTimeout(timer);
+  }, [onClose]);
+  
   const getIcon = () => {
     switch (toast.type) {
       case "error":
-        return <FaExclamationCircle className="text-destructive" />
+        return <ErrorIcon sx={{ color: "#f44336", fontSize: "1.5rem" }} />;
       default:
-        return <FaCheckCircle className="text-primary" />
+        return <CheckCircleIcon sx={{ color: "#4caf50", fontSize: "1.5rem" }} />;
     }
-  }
-
+  };
+  
   return (
-    <div
-      className={`fixed bottom-4 right-4 z-50 flex items-center gap-3 rounded-lg bg-card p-4 shadow-lg border border-border max-w-md`}
-    >
-      <div className="flex-shrink-0">{getIcon()}</div>
-      <div className="flex-1">
-        {toast.title && <h4 className="font-semibold">{toast.title}</h4>}
-        {toast.message && <p className="text-sm text-muted">{toast.message}</p>}
-      </div>
-      <button onClick={onClose} className="flex-shrink-0 text-muted hover:text-foreground">
-        <FaTimes />
-      </button>
-    </div>
-  )
-}
+    <ThemeProvider theme={theme}>
+      <Paper
+        elevation={3}
+        sx={{
+          position: "fixed",
+          bottom: 16,
+          right: 16,
+          zIndex: 1300,
+          display: "flex",
+          alignItems: "center",
+          gap: 2,
+          borderRadius: 2,
+          bgcolor: "white",
+          p: 2,
+          maxWidth: 360,
+          border: "1px solid",
+          borderColor: "grey.200",
+          fontFamily: '"Poppins", sans-serif !important'
+        }}
+      >
+        <Box sx={{ flexShrink: 0 }}>
+          {getIcon()}
+        </Box>
+        <Box sx={{ flex: 1 }}>
+          {toast.title && (
+            <Typography 
+              variant="subtitle1" 
+              sx={{ 
+                fontWeight: 600, 
+                fontFamily: '"Poppins", sans-serif !important',
+                color: toast.type === "error" ? "#f44336" : "#4caf50"
+              }}
+            >
+              {toast.title}
+            </Typography>
+          )}
+          {toast.message && (
+            <Typography 
+              variant="body2" 
+              sx={{ 
+                color: "text.secondary", 
+                fontFamily: '"Poppins", sans-serif !important' 
+              }}
+            >
+              {toast.message}
+            </Typography>
+          )}
+        </Box>
+        <IconButton 
+          size="small" 
+          onClick={onClose} 
+          sx={{ flexShrink: 0, color: "grey.500", "&:hover": { color: "grey.800" } }}
+        >
+          <CloseIcon fontSize="small" />
+        </IconButton>
+      </Paper>
+    </ThemeProvider>
+  );
+};
 
-export default Toast
+export default Toast;
