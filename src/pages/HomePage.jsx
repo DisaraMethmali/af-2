@@ -56,6 +56,8 @@ const HomePage = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [filtered, setFiltered] = useState([]);
   const [query, setQuery] = useState("");
+  const [page, setPage] = useState(1); // if pagination is needed
+const [isLoading, setIsLoading] = useState(false);
   useEffect(() => {
     const fetchCountries = async () => {
       setLoading(true);
@@ -144,7 +146,9 @@ const HomePage = () => {
   };
 
   const hasFilters = searchQuery || regionFilter || languageFilter;
-
+  useEffect(() => {
+    setFiltered([]);
+  }, [searchQuery, regionFilter, languageFilter]);
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: "background.default", fontFamily: "Poppins, sans-serif" }}>
       {/* Hero Section */}
@@ -288,7 +292,8 @@ const HomePage = () => {
           </Box>
         ) : (
           <Container maxWidth="lg" sx={{ py: 6, pr: "0px", pl: "40px" }}>
-            <CountryList countries={countries} loading={loading} />
+           <CountryList countries={filtered.length > 0 ? filtered : countries} loading={loading || isLoading} />
+
           </Container>
         )}
       </Container>
@@ -297,4 +302,3 @@ const HomePage = () => {
 };
 
 export default HomePage;
-
