@@ -1,0 +1,84 @@
+@import url("https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@300;400;600;700&family=Poppins:wght@300;400;500;600;700&display=swap");
+
+body {
+  font-family: "Nunito Sans", sans-serif;
+}
+
+.heading {
+  font-family: "Poppins", sans-serif;
+}
+
+
+
+:root {
+  --background: #ffffff;
+  --foreground: #111517;
+  --card: #ffffff;
+  --card-foreground: #111517;
+  --primary: #2b5cb6;
+  --primary-foreground: #ffffff;
+  --secondary: #f2f2f2;
+  --secondary-foreground: #111517;
+  --muted: #f2f2f2;
+  --muted-foreground: #858585;
+  --accent: #f2f2f2;
+  --accent-foreground: #111517;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: #e5e7eb;
+  --input: #e5e7eb;
+  --ring: #2b5cb6;
+  --radius: 0.5rem;
+}
+
+.dark {
+  --background: #202c37;
+  --foreground: #ffffff;
+  --card: #2b3945;
+  --card-foreground: #ffffff;
+  --primary: #4b6fd7;
+  --primary-foreground: #111517;
+  --secondary: #2b3945;
+  --secondary-foreground: #ffffff;
+  --muted: #2b3945;
+  --muted-foreground: #a1a1aa;
+  --accent: #2b3945;
+  --accent-foreground: #ffffff;
+  --destructive: #7f1d1d;
+  --destructive-foreground: #ffffff;
+  --border: #2b3945;
+  --input: #2b3945;
+  --ring: #4b6fd7;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Nunito Sans", sans-serif;
+  background-color: var(--background);
+  color: var(--foreground);
+  min-height: 100vh;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
