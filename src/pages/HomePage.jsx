@@ -1,324 +1,259 @@
-import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+"use client"
+
+import { useState, useEffect } from "react"
+import { useSearchParams } from "react-router-dom"
 import {
   Container,
   Box,
   Typography,
   TextField,
   Button,
-  Grid,
-  Paper,
   FormControl,
-  InputLabel,
   Select,
   MenuItem,
   Card,
-  CardContent,
-  CircularProgress,
-  Divider,
-  InputAdornment,
-} from "@mui/material";
-import {
-  Public as GlobeIcon,
-  Search as SearchIcon,
-  FilterList as FilterIcon,
-  Close as CloseIcon,
-} from "@mui/icons-material";
-import { styled } from "@mui/material/styles";
-import CountryList from "../components/CountryList";
-import { getAllCountries, getCountriesByName, getCountriesByRegion } from "../services/api";
-
-const regions = ["Africa", "Americas", "Asia", "Europe", "Oceania"];
-const languages = ["English", "Spanish", "French", "Arabic", "Chinese", "Russian", "Portuguese", "German"];
+} from "@mui/material"
+import { styled } from "@mui/material/styles"
+import CountryList from "../components/CountryList"
+import { getAllCountries, getCountriesByName, getCountriesByRegion } from "../services/api"
+import SearchIcon from "@mui/icons-material/Search"
+import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown"
 
 const HeroSection = styled(Box)(({ theme }) => ({
-  background: `linear-gradient(120deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-  padding: theme.spacing(10, 2),
+  background: "#fff",
+  padding: theme.spacing(6, 2),
   textAlign: "center",
-  color: "#fff",
-}));
-
-const SearchPaper = styled(Paper)(({ theme }) => ({
-  display: "flex",
-  alignItems: "center",
-  borderRadius: theme.shape.borderRadius,
-  boxShadow: theme.shadows[2],
-}));
-
-const FilterPaper = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(3),
-  borderRadius: theme.shape.borderRadius,
-  boxShadow: theme.shadows[1],
-}));
+  color: "#001f3f",
+}))
 
 const StatsCard = styled(Card)(({ theme }) => ({
   marginBottom: theme.spacing(4),
   borderRadius: theme.shape.borderRadius * 2,
   boxShadow: theme.shadows[3],
-}));
+}))
 
 const HomePage = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const searchQuery = searchParams.get("search") || "";
-  const regionFilter = searchParams.get("region") || "";
-  const languageFilter = searchParams.get("language") || "";
+  const [searchParams, setSearchParams] = useSearchParams()
+  const searchQuery = searchParams.get("search") || ""
+  const regionFilter = searchParams.get("region") || ""
+  const languageFilter = searchParams.get("language") || ""
 
-  const [countries, setCountries] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [showFilters, setShowFilters] = useState(false);
+  const [filterType, setFilterType] = useState("name")
+  const [countries, setCountries] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [filtered, setFiltered] = useState([])
+  const [query, setQuery] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
 
+  // Fetch based on URL filters
   useEffect(() => {
     const fetchCountries = async () => {
-      setLoading(true);
+      setLoading(true)
       try {
-        let result = [];
+        let result = []
 
         if (searchQuery) {
-          result = await getCountriesByName(searchQuery);
+          result = await getCountriesByName(searchQuery)
         } else if (regionFilter) {
-          result = await getCountriesByRegion(regionFilter);
+          result = await getCountriesByRegion(regionFilter)
         } else {
-          result = await getAllCountries();
+          result = await getAllCountries()
         }
 
         if (languageFilter && result.length > 0) {
-          result = result.filter((country) =>
-            country.languages &&
-            Object.values(country.languages).some((lang) =>
-              lang.toLowerCase().includes(languageFilter.toLowerCase())
-            )
-          );
+          result = result.filter(
+            (country) =>
+              country.languages &&
+              Object.values(country.languages).some((lang) =>
+                lang.toLowerCase().includes(languageFilter.toLowerCase())
+              )
+          )
         }
 
-        setCountries(result);
+        setCountries(result)
       } catch (err) {
-        console.error("Error fetching countries:", err);
-        setError("Failed to load countries. Please try again later.");
+        console.error("Error fetching countries:", err)
+        setError("Failed to load countries. Please try again later.")
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
-    };
-
-    fetchCountries();
-  }, [searchQuery, regionFilter, languageFilter]);
-
-  const handleSearch = (e) => {
-    const value = e.target.value;
-    const params = new URLSearchParams(searchParams);
-
-    if (value) {
-      params.set("search", value);
-    } else {
-      params.delete("search");
     }
 
-    setSearchParams(params);
-  };
+    fetchCountries()
+  }, [searchQuery, regionFilter, languageFilter])
 
-  const handleRegionChange = (e) => {
-    const value = e.target.value;
-    const params = new URLSearchParams(searchParams);
-
-    if (value) {
-      params.set("region", value);
-    } else {
-      params.delete("region");
+  // Automatic search on query/filterType change
+  useEffect(() => {
+    if (!query) {
+      setFiltered([])
+      return
     }
 
-    setSearchParams(params);
-  };
+    const delayDebounce = setTimeout(() => {
+      setIsLoading(true)
+      handleSearch(filterType, query).then((data) => {
+        setFiltered(data)
+        setIsLoading(false)
+      })
+    }, 500)
 
-  const handleLanguageChange = (e) => {
-    const value = e.target.value;
-    const params = new URLSearchParams(searchParams);
+    return () => clearTimeout(delayDebounce)
+  }, [query, filterType])
 
-    if (value) {
-      params.set("language", value);
-    } else {
-      params.delete("language");
+  const handleSearch = async (filterType, query) => {
+    let endpoint = ""
+
+    switch (filterType) {
+      case "name":
+        endpoint = `https://restcountries.com/v3.1/name/${query}`
+        break
+      case "fullText":
+        endpoint = `https://restcountries.com/v3.1/name/${query}?fullText=true`
+        break
+      case "capital":
+        endpoint = `https://restcountries.com/v3.1/capital/${query}`
+        break
+      case "currency":
+        endpoint = `https://restcountries.com/v3.1/currency/${query}`
+        break
+      case "lang":
+        endpoint = `https://restcountries.com/v3.1/lang/${query}`
+        break
+      case "code":
+        endpoint = `https://restcountries.com/v3.1/alpha/${query}`
+        break
+      case "codes":
+        endpoint = `https://restcountries.com/v3.1/alpha?codes=${query}`
+        break
+      case "region":
+      case "subregion":
+      case "translation":
+        endpoint = `https://restcountries.com/v3.1/all`
+        break
+      default:
+        endpoint = `https://restcountries.com/v3.1/name/${query}`
     }
 
-    setSearchParams(params);
-  };
+    try {
+      const res = await fetch(endpoint)
+      if (!res.ok) throw new Error("Failed to fetch data.")
+      const data = await res.json()
+      let filteredData = Array.isArray(data) ? data : [data]
 
-  const clearFilters = () => {
-    setSearchParams({});
-  };
+      if (filterType === "region") {
+        filteredData = filteredData.filter((country) =>
+          country.region?.toLowerCase().includes(query.toLowerCase())
+        )
+      } else if (filterType === "subregion") {
+        filteredData = filteredData.filter((country) =>
+          country.subregion?.toLowerCase().includes(query.toLowerCase())
+        )
+      } else if (filterType === "translation") {
+        filteredData = filteredData.filter((country) =>
+          Object.values(country.translations || {}).some((t) =>
+            Object.values(t).some((val) => val?.toLowerCase().includes(query.toLowerCase()))
+          )
+        )
+      }
 
-  const hasFilters = searchQuery || regionFilter || languageFilter;
+      return filteredData
+    } catch (error) {
+      console.error("Search Error:", error.message)
+      return []
+    }
+  }
 
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: "background.default", fontFamily: "Poppins, sans-serif" }}>
-      {/* Hero Section */}
       <HeroSection>
         <Container maxWidth="lg">
-          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", mb: 3 }}>
-            <GlobeIcon sx={{ fontSize: 48, mr: 1 }} />
-            <Typography variant="h3" fontWeight={700}>
-              REST Countries Explorer
+          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+            <Typography variant="h4" fontWeight={700} sx={{ color: "#001f3f", fontFamily: "Poppins, sans-serif" }}>
+            CountryTap - Countries Explorer
             </Typography>
-          </Box>
-          <Typography variant="subtitle1" sx={{ maxWidth: 600, mx: "auto", opacity: 0.8 }}>
-            Discover detailed information about countries across the globe
-          </Typography>
+            <Typography
+              variant="subtitle1"
+              sx={{ maxWidth: 600, mx: "auto", opacity: 0.8, fontFamily: "Poppins, sans-serif", mt: 0, mb: 2 }}
+            >
+              Discover detailed information about countries across the globe
+            </Typography>
 
-          {/* Search */}
-          <Box sx={{ maxWidth: 800, mx: "auto", mt: 4 }}>
-            <SearchPaper>
+            <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 2, mb: 2, alignItems: "center" }}>
+              <FormControl sx={{ minWidth: 160, borderRadius: "30px", height: "40px" }}>
+                <Select
+                  value={filterType}
+                  onChange={(e) => setFilterType(e.target.value)}
+                  IconComponent={ArrowDropDownIcon}
+                  sx={{ fontFamily: "Poppins, sans-serif", height: "40px" ,borderRadius: "30px", }}
+                >
+                  {["name", "fullText", "code", "codes", "capital", "region", "subregion", "lang", "currency", "translation"].map(
+                    (option) => (
+                      <MenuItem key={option} value={option} sx={{ fontFamily: "Poppins, sans-serif" }}>
+                        {option.charAt(0).toUpperCase() + option.slice(1)}
+                      </MenuItem>
+                    )
+                  )}
+                </Select>
+              </FormControl>
+
               <TextField
-                fullWidth
-                placeholder="Search by country name..."
-                value={searchQuery}
-                onChange={handleSearch}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search..."
                 variant="outlined"
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon />
-                    </InputAdornment>
-                  ),
-                  sx: { borderRadius: 2 },
-                }}
+                size="small"
                 sx={{
-                  "& .MuiOutlinedInput-root": {
-                    "& fieldset": { border: "none" },
-                  },
+                  width: { xs: "100%", sm: "53%" },
+                  borderRadius: "30px",
+                  "& .MuiOutlinedInput-root": { borderRadius: "30px" },
+                  "& input": { fontFamily: "Poppins, sans-serif" },
+                }}
+                InputProps={{
+                  startAdornment: <SearchIcon sx={{ color: "gray", mr: 1 }} />,
                 }}
               />
-              <Button
-                onClick={() => setShowFilters(!showFilters)}
-                variant="contained"
-                color="secondary"
-                sx={{ height: 56, borderTopLeftRadius: 0, borderBottomLeftRadius: 0 }}
-              >
-                <FilterIcon />
-              </Button>
-              {hasFilters && (
-                <Button
-                  onClick={clearFilters}
-                  color="error"
-                  variant="contained"
-                  sx={{ height: 56 }}
-                >
-                  <CloseIcon />
-                </Button>
-              )}
-            </SearchPaper>
-          </Box>
 
-          {/* Filters */}
-          {showFilters && (
-            <FilterPaper sx={{ mt: 2 }}>
-              <Grid container spacing={2}>
-                <Grid item xs={12} md={6}>
-                  <FormControl fullWidth>
-                    <InputLabel>Region</InputLabel>
-                    <Select
-                      value={regionFilter}
-                      onChange={handleRegionChange}
-                      label="Region"
-                    >
-                      <MenuItem value="">All Regions</MenuItem>
-                      {regions.map((region) => (
-                        <MenuItem key={region} value={region}>
-                          {region}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <FormControl fullWidth>
-                    <InputLabel>Language</InputLabel>
-                    <Select
-                      value={languageFilter}
-                      onChange={handleLanguageChange}
-                      label="Language"
-                    >
-                      <MenuItem value="">All Languages</MenuItem>
-                      {languages.map((lang) => (
-                        <MenuItem key={lang} value={lang}>
-                          {lang}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-              </Grid>
-            </FilterPaper>
-          )}
+              <Button
+                variant="outlined"
+                color="inherit"
+                onClick={() => {
+                  setQuery("")
+                  setFilterType("name")
+                  setFiltered([])
+                }}
+                sx={{
+                  height: "40px",
+                  px: 3,
+                  borderRadius: "30px",
+                  textTransform: "none",
+                  fontFamily: "Poppins, sans-serif",
+                }}
+              >
+                Reset
+              </Button>
+            </Box>
+          </Box>
         </Container>
       </HeroSection>
 
-      {/* Content Section */}
-      <Container maxWidth="lg" sx={{ py: 6 }}>
-        {/* Stats */}
-        <StatsCard>
-          <CardContent>
-            <Grid container spacing={2} alignItems="center">
-              <Grid item xs={6} md="auto">
-                <Typography variant="caption" color="text.secondary">
-                  Total Countries
-                </Typography>
-                <Typography variant="h5" fontWeight="bold">
-                  {loading ? <CircularProgress size={24} /> : countries.length}
-                </Typography>
-              </Grid>
-
-              {regionFilter && (
-                <Grid item xs={6} md="auto">
-                  <Typography variant="caption" color="text.secondary">
-                    Region
-                  </Typography>
-                  <Typography variant="h5" fontWeight="bold">
-                    {regionFilter}
-                  </Typography>
-                </Grid>
-              )}
-
-              {languageFilter && (
-                <Grid item xs={6} md="auto">
-                  <Typography variant="caption" color="text.secondary">
-                    Language
-                  </Typography>
-                  <Typography variant="h5" fontWeight="bold">
-                    {languageFilter}
-                  </Typography>
-                </Grid>
-              )}
-
-              {searchQuery && (
-                <Grid item xs={6} md="auto">
-                  <Typography variant="caption" color="text.secondary">
-                    Search
-                  </Typography>
-                  <Typography variant="h5" fontWeight="bold">
-                    "{searchQuery}"
-                  </Typography>
-                </Grid>
-              )}
-            </Grid>
-          </CardContent>
-        </StatsCard>
-
-       {/* Country List */}
-{error ? (
-  <Box textAlign="center" py={6}>
-    <Typography variant="h6" color="error">
-      {error}
-    </Typography>
-  </Box>
-) : (
-  <Container maxWidth="lg" sx={{ py: 6, px: '40px' }}>
-    <CountryList countries={countries} loading={loading} />
-  </Container>
-)}
-
+      <Container maxWidth="lg" sx={{ mt: 3,mr:4 }}>
+        {error ? (
+          <Box textAlign="center" py={3}>
+            <Typography variant="h6" color="error" fontFamily="Poppins, sans-serif">
+              {error}
+            </Typography>
+          </Box>
+        ) : isLoading ? (
+          <Typography>Loading...</Typography>
+        ) : (
+          <CountryList countries={filtered.length ? filtered : countries} />
+        )}
       </Container>
     </Box>
-  );
-};
+  )
+}
 
-export default HomePage;
+export default HomePage
+
 

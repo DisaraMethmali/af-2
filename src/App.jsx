@@ -10,19 +10,34 @@ import SignInPage from "./pages/SignInPage"
 import NotFoundPage from "./pages/NotFoundPage"
 import ProtectedRoute from "./components/ProtectedRoute"
 import "./App.css"
-
-
+import AllCountries from "./pages/AllCountries";
+import { getAllCountries } from "./services/api"
+import { useState, useEffect } from "react"
 function App() {
+  const [countries, setCountries] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchAllCountries = async () => {
+      try {
+        const data = await getAllCountries()
+        setCountries(data)
+      } catch (error) {
+        console.error("Error fetching countries:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchAllCountries()
+  }, [])
   return (
     <Router>
       <ThemeProvider>
         <AuthProvider>
           <ToastProvider>
             <div className="app">
-            <link
-  href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap"
-  rel="stylesheet"
-/>
+
               <Header />
               <Routes>
                 <Route path="/" element={<HomePage />} />
@@ -35,6 +50,7 @@ function App() {
                     </ProtectedRoute>
                   }
                 />
+                   <Route path="/all-countries" element={<AllCountries countries={countries} loading={loading} />} />
                 <Route path="/signin" element={<SignInPage />} />
                 <Route path="*" element={<NotFoundPage />} />
               </Routes>
